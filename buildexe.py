@@ -97,4 +97,4 @@ setup(
     zipfile = 'library.zip',
 )
 
-print 'Check the ./dist/win32 folder'
+print('Check the ./dist/win32 folder')

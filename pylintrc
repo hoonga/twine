@@ -71,3 +71,8 @@ max-statements=100
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=14
+
+[WX]
+
+# Wx python issues
+extension-pkg-whitelist=wx

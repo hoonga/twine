@@ -1,4 +1,4 @@
-import copy, math, colorsys, re, wx, tiddlywiki, tweelexer
+import copy, math, colorsys, re, wx, tiddlywiki, tweelexer, codecs
 import geometry, metrics, images
 from passageframe import PassageFrame, ImageFrame, StorySettingsFrame
 
@@ -154,19 +154,19 @@ class PassageWidget(object):
 
     def getShorthandDisplays(self):
         """Returns a list of macro tags which match passage names."""
-        return filter(self.parent.passageExists, self.passage.macros)
+        return list(filter(self.parent.passageExists, self.passage.macros))
 
     def getBrokenLinks(self):
         """Returns a list of broken links in this widget."""
-        return filter(lambda a: not self.parent.passageExists(a), self.passage.links)
+        return [a for a in self.passage.links if not self.parent.passageExists(a)]
 
     def getIncludedLinks(self):
         """Returns a list of included passages in this widget."""
-        return filter(self.parent.includedPassageExists, self.passage.links)
+        return list(filter(self.parent.includedPassageExists, self.passage.links))
 
     def getVariableLinks(self):
         """Returns a list of links which use variables/functions, in this widget."""
-        return filter(lambda a: tweelexer.TweeLexer.linkStyle(a) == tweelexer.TweeLexer.PARAM, self.passage.links)
+        return [a for a in self.passage.links if tweelexer.TweeLexer.linkStyle(a) == tweelexer.TweeLexer.PARAM]
 
     def setSelected(self, value, exclusive = True):
         """
@@ -290,7 +290,7 @@ class PassageWidget(object):
 
         # we do this manually so we don't have to go through all of them
 
-        for widget in self.parent.notDraggingWidgets if dragging else self.parent.widgetDict.itervalues():
+        for widget in self.parent.notDraggingWidgets if dragging else iter(self.parent.widgetDict.values()):
             if widget != self and self.intersects(widget):
                 return True
 
@@ -498,7 +498,7 @@ class PassageWidget(object):
             if isinstance(c, wx.Colour):
                 c = list(c.Get(includeAlpha=True))
             elif type(c) is str:
-                c = list(ord(a) for a in c[1:].decode('hex'))
+                c = bytearray(codecs.decode(c[1:], 'hex'))
             else:
                 c = list(c)
 
@@ -507,7 +507,7 @@ class PassageWidget(object):
             if dim:
                 a = PassageWidget.FLAT_DIMMED_ALPHA if flat else PassageWidget.DIMMED_ALPHA
                 if not self.app.config.ReadBool('fastStoryPanel'):
-                    c[3] *= a
+                    c[3] = int(c[3]*a)
                 else:
                     c[0] *= a
                     c[1] *= a
@@ -515,7 +515,7 @@ class PassageWidget(object):
             return wx.Colour(*c)
 
         # set up our buffer
-        bitmap = wx.EmptyBitmap(size.width, size.height)
+        bitmap = wx.Bitmap(size.width, size.height)
         self.paintBuffer.SelectObject(bitmap)
 
         # switch to a GraphicsContext as necessary
@@ -772,7 +772,7 @@ class PassageWidget(object):
         # finally, draw a selection over ourselves if we're selected
 
         if self.selected:
-            color = dim(titleBarColor if flat else wx.SystemSettings_GetColour(wx.SYS_COLOUR_HIGHLIGHT), self.dimmed)
+            color = dim(titleBarColor if flat else wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT), self.dimmed)
             if self.app.config.ReadBool('fastStoryPanel'):
                 gc.SetPen(wx.Pen(color, 2 + flat))
             else:
@@ -793,8 +793,7 @@ class PassageWidget(object):
         """Returns a dictionary with state information suitable for pickling."""
         return { 'selected': self.selected, 'pos': self.pos, 'passage': copy.copy(self.passage) }
 
-    @staticmethod
-    def posCompare(first, second):
+    def __gt__(first, second):
         """
         Sorts PassageWidgets so that the results appear left to right,
         top to bottom. A certain amount of slack is assumed here in
@@ -803,13 +802,13 @@ class PassageWidget(object):
 
         yDistance = int(first.pos[1] - second.pos[1])
         if abs(yDistance) > 5:
-            return yDistance
+            return yDistance > 0
 
         xDistance = int(first.pos[0] - second.pos[0])
         if xDistance != 0:
-            return xDistance
+            return xDistance > 0
 
-        return id(first) - id(second) # punt on ties
+        return id(first) - id(second) > 0 # punt on ties
 
     def __repr__(self):
         return "<PassageWidget '" + self.passage.title + "'>"

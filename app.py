@@ -17,7 +17,7 @@ class App(wx.App):
     def __init__(self, redirect = False):
         """Initializes the application."""
         wx.App.__init__(self, redirect = redirect)
-        locale.setlocale(locale.LC_ALL, '')
+        locale = wx.Locale(wx.Locale.GetSystemLanguage())
         self.stories = []
         self.loadPrefs()
         self.determinePaths()
@@ -31,7 +31,7 @@ class App(wx.App):
         # try to load our app icon
         # if it doesn't work, we continue anyway
 
-        self.icon = wx.EmptyIcon()
+        self.icon = wx.Icon()
 
         try:
             self.icon = wx.Icon(self.iconsPath + 'app.ico', wx.BITMAP_TYPE_ICO)
@@ -102,7 +102,7 @@ class App(wx.App):
     def open(self, path):
         """Opens a specific story file."""
         try:
-            openedFile = open(path, 'r')
+            openedFile = open(path, 'rb')
             newStory = StoryFrame(None, app = self, state = pickle.load(openedFile))
             newStory.saveDestination = path
             self.stories.append(newStory)
@@ -198,7 +198,7 @@ class App(wx.App):
 
     def about(self, event = None):
         """Shows the about dialog."""
-        info = wx.AboutDialogInfo()
+        info = wx.adv.AboutDialogInfo()
         info.SetName(self.NAME)
         info.SetVersion(self.VERSION)
         info.SetIcon(self.icon)
@@ -214,7 +214,7 @@ class App(wx.App):
                         '\n\n'
                         'The Javascript game engine in compiled game files is a derivative work of Jeremy Ruston\'s'
                         ' TiddlyWiki project, and is used under the terms of the MIT license.')
-        wx.AboutBox(info)
+        wx.adv.AboutBox(info)
 
     def storyFormatHelp(self, event = None):
         """Opens the online manual to the section on story formats."""
@@ -256,7 +256,7 @@ class App(wx.App):
             'createPassagePrompt' : True,
             'importImagePrompt' : True,
             'passageWarnings' : True
-        }.iteritems():
+        }.items():
             if not sc.HasEntry(k):
                 if type(v) == str:
                     sc.Write(k,v)

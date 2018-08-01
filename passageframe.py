@@ -1,4 +1,4 @@
-import sys, os, re, threading, wx, wx.lib.scrolledpanel, wx.animate, base64, tweeregex
+import sys, os, re, threading, wx, wx.lib.scrolledpanel, wx.adv, base64, tweeregex
 import metrics, images
 from version import versionString
 from tweelexer import TweeLexer
@@ -7,7 +7,7 @@ from tiddlywiki import TiddlyWiki
 from passagesearchframe import PassageSearchFrame
 from fseditframe import FullscreenEditFrame
 from utils import isURL
-import cStringIO
+import io
 
 class PassageFrame(wx.Frame):
     """
@@ -45,11 +45,11 @@ class PassageFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.editSelection, id = PassageFrame.PASSAGE_EDIT_SELECTION)
 
         self.outLinksMenu = wx.Menu()
-        self.outLinksMenuTitle = passageMenu.AppendMenu(wx.ID_ANY, 'Outgoing Links', self.outLinksMenu)
+        self.outLinksMenuTitle = passageMenu.Append(wx.ID_ANY, 'Outgoing Links', self.outLinksMenu)
         self.inLinksMenu = wx.Menu()
-        self.inLinksMenuTitle = passageMenu.AppendMenu(wx.ID_ANY, 'Incoming Links', self.inLinksMenu)
+        self.inLinksMenuTitle = passageMenu.Append(wx.ID_ANY, 'Incoming Links', self.inLinksMenu)
         self.brokenLinksMenu = wx.Menu()
-        self.brokenLinksMenuTitle = passageMenu.AppendMenu(wx.ID_ANY, 'Broken Links', self.brokenLinksMenu)
+        self.brokenLinksMenuTitle = passageMenu.Append(wx.ID_ANY, 'Broken Links', self.brokenLinksMenu)
 
         passageMenu.AppendSeparator()
 
@@ -185,8 +185,8 @@ class PassageFrame(wx.Frame):
         self.bodyInput.SetMarginWidth(1, 0)
         self.bodyInput.SetTabWidth(4)
         self.bodyInput.SetWrapMode(wx.stc.STC_WRAP_WORD)
-        self.bodyInput.SetSelBackground(True, wx.SystemSettings_GetColour(wx.SYS_COLOUR_HIGHLIGHT))
-        self.bodyInput.SetSelForeground(True, wx.SystemSettings_GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        self.bodyInput.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+        self.bodyInput.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
         self.bodyInput.SetFocus()
 
         # The default keyboard shortcuts for StyledTextCtrl are
@@ -399,7 +399,7 @@ class PassageFrame(wx.Frame):
                     downloadedurls[imgurl] = imgpassagename
 
             # Replace all found images
-            for old, new in downloadedurls.iteritems():
+            for old, new in downloadedurls.items():
                 self.widget.passage.text = re.sub(regex.replace(tweeregex.IMAGE_FILENAME_REGEX, re.escape(old)),
                                                   lambda m: m.group(0).replace(old, new), self.widget.passage.text)
 
@@ -724,7 +724,7 @@ class PassageFrame(wx.Frame):
 
         # incoming links
 
-        for widget in self.widget.parent.widgetDict.itervalues():
+        for widget in self.widget.parent.widgetDict.values():
             if self.widget.passage.title in widget.passage.links \
             and len(widget.passage.title) > 0:
                 incoming.append(widget.passage.title)
@@ -786,10 +786,10 @@ class PassageFrame(wx.Frame):
     # menu constants (not defined by wx)
 
     EDIT_FIND_NEXT = 2001
-    [PASSAGE_FULLSCREEN, PASSAGE_EDIT_SELECTION, PASSAGE_REBUILD_STORY, PASSAGE_TEST_HERE, PASSAGE_VERIFY] = range(1001,1006)
-    [HELP1, HELP2, HELP3, HELP4, HELP5] = range(3001,3006)
+    [PASSAGE_FULLSCREEN, PASSAGE_EDIT_SELECTION, PASSAGE_REBUILD_STORY, PASSAGE_TEST_HERE, PASSAGE_VERIFY] = list(range(1001,1006))
+    [HELP1, HELP2, HELP3, HELP4, HELP5] = list(range(3001,3006))
 
-    [LEXER_NONE, LEXER_NORMAL, LEXER_CSS] = range(0,3)
+    [LEXER_NONE, LEXER_NORMAL, LEXER_CSS] = list(range(0,3))
 
 
 class StorySettingsFrame(PassageFrame):
@@ -1046,13 +1046,13 @@ class ImageFrame(PassageFrame):
             # GIF animation
             if t.startswith("data:image/gif"):
 
-                self.gif = wx.animate.AnimationCtrl(self.imageScroller, size = size)
+                self.gif = wx.adv.AnimationCtrl(self.imageScroller, size = size)
                 self.imageSizer.Add(self.gif, 1, wx.ALIGN_CENTER)
 
                 # Convert the full GIF to an Animation
-                anim = wx.animate.Animation()
+                anim = wx.adv.Animation()
                 data = base64.b64decode(t[t.index("base64,")+7:])
-                anim.Load(cStringIO.StringIO(data))
+                anim.Load(io.StringIO(data))
 
                 # Load the Animation into the AnimationCtrl
 

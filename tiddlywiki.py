@@ -32,8 +32,8 @@ class TiddlyWiki(object):
         """
         tiddlers = self.tiddlers
         if order is None:
-            order = tiddlers.keys()
-        return u''.join(tiddlers[i].toTwee() for i in order)
+            order = list(tiddlers.keys())
+        return ''.join(tiddlers[i].toTwee() for i in order)
 
     def read(self, filename):
         try:
@@ -51,8 +51,8 @@ class TiddlyWiki(object):
 
     def toHtml(self, app, header = None, order = None, startAt = '', defaultName = '', metadata = {}):
         """Returns HTML code for this TiddlyWiki."""
-        if not order: order = self.tiddlers.keys()
-        output = u''
+        if not order: order = list(self.tiddlers.keys())
+        output = ''
 
         if not header:
             app.displayError("building: no story format was specified.\n"
@@ -94,7 +94,7 @@ class TiddlyWiki(object):
         # Obtain the encoding expected to be used by strftime in this locale
         strftime_encoding = locale.getlocale(locale.LC_TIME)[1] or locale.getpreferredencoding()
         # Write the timestamp
-        output = output.replace('"TIME"', "Built on "+time.strftime("%d %b %Y at %H:%M:%S, "+tz_offset).decode(strftime_encoding))
+        output = output.replace('"TIME"', "Built on "+time.strftime("%d %b %Y at %H:%M:%S, "+tz_offset))
 
         # Insert the test play "start at passage" value
         if startAt:
@@ -105,7 +105,7 @@ class TiddlyWiki(object):
         # Embed any engine related files required by the header.
 
         embedded = header.filesToEmbed()
-        for key in embedded.keys():
+        for key in list(embedded.keys()):
             output = insertEngine(app, output, embedded[key], key)
             if not output: return ''
 
@@ -120,7 +120,7 @@ class TiddlyWiki(object):
         # Insert the metadata
 
         metatags = ''
-        for name, content in metadata.iteritems():
+        for name, content in metadata.items():
             if content:
                 metatags += '<meta name="' + name.replace('"','&quot;') + '" content="' + content.replace('"','&quot;') + '">\n'
 
@@ -132,7 +132,7 @@ class TiddlyWiki(object):
         modernizr = 'modernizr' in self.storysettings and self.storysettings['modernizr'] != "off"
         blankCSS = 'blankcss' in self.storysettings and self.storysettings['blankcss'] != "off"
 
-        for i in filter(lambda a: (a.isScript() or a.isStylesheet()), self.tiddlers.itervalues()):
+        for i in [a for a in iter(self.tiddlers.values()) if (a.isScript() or a.isStylesheet())]:
             if not jquery and i.isScript() and re.search(r'requires? jquery', i.text, re.I):
                 jquery = True
             if not modernizr and re.search(r'requires? modernizr', i.text, re.I):
@@ -176,10 +176,10 @@ class TiddlyWiki(object):
             tiddler = self.tiddlers[i]
             # Strip out comments from storysettings and reflect any alterations made
             if tiddler.title == 'StorySettings':
-                tiddler.text = ''.join([(str(k)+":"+str(v)+"\n") for k,v in self.storysettings.iteritems()])
+                tiddler.text = ''.join([(str(k)+":"+str(v)+"\n") for k,v in self.storysettings.items()])
             if self.NOINCLUDE_TAGS.isdisjoint(tiddler.tags):
                 storyfragments.append(tiddler.toHtml(rot13 and tiddler.isObfuscateable()))
-        storycode = u''.join(storyfragments)
+        storycode = ''.join(storyfragments)
 
         if output.count('"STORY_SIZE"') > 0:
             output = output.replace('"STORY_SIZE"', '"' + str(len(storyfragments)) + '"')
@@ -199,7 +199,7 @@ class TiddlyWiki(object):
 
     def toRtf(self, order = None):
         """Returns RTF source code for this TiddlyWiki."""
-        if not order: order = self.tiddlers.keys()
+        if not order: order = list(self.tiddlers.keys())
 
         def rtf_encode_char(unicodechar):
             if ord(unicodechar) < 128:
@@ -281,7 +281,7 @@ class TiddlyWiki(object):
                         match = re.search(r'obfuscatekey\s*:\s*(\w*)\s*(?:\n|$)', ssTiddler.text, re.I)
                         if match:
                             obfuscatekey = match.group(1)
-                            nss = u''
+                            nss = ''
                             for nsc in obfuscatekey:
                                 if nss.find(nsc) == -1 and not nsc in ':\\\"n0':
                                     nss = nss + nsc
@@ -376,7 +376,7 @@ class Tiddler: # pylint: disable=old-style-class
 
         # and then the body text
 
-        self.text = u''
+        self.text = ''
 
         for line in lines[1:]:
             self.text += line + "\n"
@@ -431,7 +431,7 @@ class Tiddler: # pylint: disable=old-style-class
             coord = pos.group(1).split(',')
             if len(coord) == 2:
                 try:
-                    self.pos = map(int, coord)
+                    self.pos = list(map(int, coord))
                 except ValueError:
                     pass
 
@@ -464,7 +464,7 @@ class Tiddler: # pylint: disable=old-style-class
             if self.tags:
                 yield 'tags', ' '.join(applyRot13(tag) for tag in self.tags)
 
-        return u'<div%s%s>%s</div>' % (
+        return '<div%s%s>%s</div>' % (
             ''.join(' %s="%s"' % arg for arg in iterArgs()),
             ' twine-position="%d,%d"' % tuple(self.pos) if hasattr(self, "pos") else "",
             encode_text(applyRot13(self.text))
@@ -473,16 +473,16 @@ class Tiddler: # pylint: disable=old-style-class
 
     def toTwee(self):
         """Returns a Twee representation of this tiddler."""
-        output = u':: ' + self.title
+        output = ':: ' + self.title
 
         if len(self.tags) > 0:
-            output += u' ['
+            output += ' ['
             for tag in self.tags:
                 output += tag + ' '
             output = output.strip()
-            output += u']'
+            output += ']'
 
-        output += u"\n" + self.text + u"\n\n\n"
+        output += "\n" + self.text + "\n\n\n"
         return output
 
     def isImage(self):
